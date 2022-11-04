@@ -3,10 +3,14 @@
       <div class="content">
         <div class="header">
             <div class="header-logo">
-              <img width="60" height="60" src="./assets/Logo.png"/>
+              <!-- <img width="60" height="60" src="./assets/Logo.png"/> -->
             </div>
         </div>
       <div class="main">
+        <div class="option-avia-wrapper">
+          <div class="option-avia-logo">
+               <img width="60" height="60" src="./assets/Logo.png"/>
+          </div>
           <div class="option-avia">
               <span class="option-avia-title">Количество пересадок</span>
               <div class="options-avia">
@@ -15,39 +19,33 @@
                     <label for="all">Все</label>
                 </div>
                 <div class="option">
-                    <input id="without" value="without" type="checkbox" v-model="aviaTransfer"/>
+                    <input id="without" value="0" type="checkbox" v-model="aviaTransfer"/>
                     <label for="without">Без пересадок</label>
                 </div>
                  <div class="option">
-                    <input id="one-avia" value="one-avia" type="checkbox" v-model="aviaTransfer"/>
+                    <input id="one-avia" value="1" type="checkbox" v-model="aviaTransfer"/>
                     <label for="one-avia">1 пересадка</label>
                 </div>
                  <div class="option">
-                    <input id="two-avia" value="two-avia" type="checkbox" v-model="aviaTransfer"/>
+                    <input id="two-avia" value="2" type="checkbox" v-model="aviaTransfer"/>
                     <label for="two-avia">2 пересадки</label>
                 </div>
                  <div class="option">
-                    <input id="three-avia" value="three-avia" type="checkbox" v-model="aviaTransfer"/>
+                    <input id="three-avia" value="3" type="checkbox" v-model="aviaTransfer"/>
                     <label for="three-avia">3 пересадки</label>
                 </div>
               </div>
           </div>
+          </div>
           <div class="avia-flights">
             <div class="avia-flights-types">
-              <div class="avia-flights-type" :class="{
-                  'avia-flights-type--active': type == 'cheapset'
-              }" @click="chooseType('cheapset')">Самый дешевый</div>
-              <div class="avia-flights-type" :class="{
-                  'avia-flights-type--active': type == 'quick'
-              }" 
-               @click="chooseType('quick')">Самый быстрый</div>
-              <div class="avia-flights-type" :class="{
-                  'avia-flights-type--active': type == 'normal'
-              }"
-               @click="chooseType('normal')">Оптимальный</div>
+              <div v-for="typeAvia in typesAvia" :key="typeAvia._id" class="avia-flights-type" :class="{
+                  'avia-flights-type--active': type == typeAvia._id
+              }" @click="chooseType(typeAvia._id)">{{typeAvia.name}}</div>
             </div>
-            <avia-card/>
-            <div class="show-flights">
+
+            <avia-card :tickets="tickets" />
+            <div @click="page +=1" class="show-flights">
               <span>ПОКАЗАТЬ ЕЩЕ 5 БИЛЕТОВ!</span>
             </div>
           </div>
@@ -59,6 +57,7 @@
 <script>
 
 import AviaCard from './components/AviaCard.vue'
+import api from './api/api.js'
 
 export default {
   name: 'App',
@@ -66,9 +65,13 @@ export default {
   data() {
     return {
       type: '',
-      aviaTransfer: []
+      aviaTransfer: [],
+      tickets: [],
+      typesAvia: [],
+      page: 0
     }
   },
+
 
 
   created() {
@@ -80,7 +83,7 @@ export default {
     //   this[key] = params[key]
     // })
     this.aviaTransfer = avia?.length >= 1 ? avia.filter(e => e): [];
-    this.type = type ? type : 'cheapset';
+    this.type = type ? type : '617aaa2a0bc7e78d5573ec28';
   },
 
 
@@ -94,18 +97,31 @@ export default {
   },
 
 
+  mounted() {
+    this.getTypesAvia();
+    this.getTickets();
+  },
+
   watch: {
     aviaTransfer() {
-      console.log(this.pageStateOptions.aviaTransfer.length)
       if(this.pageStateOptions.aviaTransfer.length > 0) {
         window.history.pushState(null, document.title, `${window.location.pathname}?avia=${this.pageStateOptions.aviaTransfer}`)
+        this.getTickets()
         return
       }
       if(this.pageStateOptions.type) {
         window.localStorage.setItem('type', this.pageStateOptions.type)
       }
       window.history.pushState(null, document.title, `${window.location.pathname}`)
+      this.getTickets()
     },
+    type() {
+      this.getTickets()
+      this.page = 0;
+    },
+    page() {
+      this.getTickets();
+    }
   },
 
   methods: {
@@ -113,6 +129,15 @@ export default {
       this.type = type;
       this.aviaTransfer = []
     },
+    // eslint-disable-next-line no-unused-vars
+    async getTickets() {
+      const tickets = await api.getTickets(this.pageStateOptions, this.page);
+      this.tickets = tickets;
+    },
+    async getTypesAvia() {
+      const typesAvia = await api.getAvia();
+      this.typesAvia = typesAvia;
+    }
   }
 }
 </script>
